@@ -20,11 +20,20 @@ const Dashboard: React.FC = () => {
   const [diaAtual, setDiaAtual] = useState<number>(1);
   const [historicoBancas, setHistoricoBancas] = useState<Array<{ dia: number; banca: number; bancaInicial: number }>>([]);
   const [showRegistrationModal, setShowRegistrationModal] = useState(true);
+  const [bancaInicialPrimeiroDia, setBancaInicialPrimeiroDia] = useState<number | null>(null);
 
   useEffect(() => {
     if (bankrollInicial && !isNaN(parseFloat(bankrollInicial))) {
       const valor = parseFloat(bankrollInicial);
-      const stopGreenValue = (valor * 1.3);
+      let stopGreenMultiplier = 1.2; // 20% para perfil moderado
+      
+      if (tipoJogador === 'Agressivo - 30% da banca') {
+        stopGreenMultiplier = 1.3; // 30% para perfil agressivo
+      } else if (tipoJogador === 'Conservador - 10% da banca') {
+        stopGreenMultiplier = 1.1; // 10% para perfil conservador
+      }
+      
+      const stopGreenValue = (valor * stopGreenMultiplier);
       const stopLossValue = (valor * 0.8);
       setStopGreen(formatarMoeda(stopGreenValue));
       setStopLoss(formatarMoeda(stopLossValue));
@@ -32,7 +41,13 @@ const Dashboard: React.FC = () => {
       setStopGreen(formatarMoeda(0));
       setStopLoss(formatarMoeda(0));
     }
-  }, [bankrollInicial]);
+  }, [bankrollInicial, tipoJogador]);
+
+  useEffect(() => {
+    if (bankrollInicial && !isNaN(parseFloat(bankrollInicial)) && diaAtual === 1) {
+      setBancaInicialPrimeiroDia(parseFloat(bankrollInicial));
+    }
+  }, [bankrollInicial, diaAtual]);
 
   const getPerfilPorcentagem = (perfil: string): number => {
     switch (perfil) {
@@ -43,8 +58,17 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const calcularValorMaximoEntrada = (saldoAtual: number) => {
-    return saldoAtual * 0.05;
+  const getValorMaximoEntradaPorcentagem = (perfil: string): number => {
+    switch (perfil) {
+      case 'Agressivo - 30% da banca': return 10;
+      default: return 5;
+    }
+  };
+
+  const calcularValorMaximoEntrada = () => {
+    if (!bancaInicialPrimeiroDia) return 0;
+    const porcentagem = getValorMaximoEntradaPorcentagem(tipoJogador) / 100;
+    return bancaInicialPrimeiroDia * porcentagem;
   };
 
   const finalizarDia = () => {
@@ -123,35 +147,91 @@ const Dashboard: React.FC = () => {
     </motion.svg>
   );
 
+  const exportarHistorico = () => {
+    const dados = {
+      historicoBancas,
+      diaAtual,
+      bancaInicialPrimeiroDia,
+      bankrollInicial
+    };
+    
+    const blob = new Blob([JSON.stringify(dados, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `historico-operacoes-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const importarHistorico = (evento: React.ChangeEvent<HTMLInputElement>) => {
+    const arquivo = evento.target.files?.[0];
+    if (!arquivo) return;
+
+    const leitor = new FileReader();
+    leitor.onload = (e) => {
+      try {
+        const conteudo = e.target?.result as string;
+        const dados = JSON.parse(conteudo);
+        
+        setHistoricoBancas(dados.historicoBancas);
+        setDiaAtual(dados.diaAtual);
+        setBancaInicialPrimeiroDia(dados.bancaInicialPrimeiroDia);
+        setBankrollInicial(dados.bankrollInicial);
+        
+        // Recalcular stop loss e stop gain
+        if (dados.bankrollInicial) {
+          const valor = parseFloat(dados.bankrollInicial);
+          let stopGreenMultiplier = 1.2;
+          
+          if (tipoJogador === 'Agressivo - 30% da banca') {
+            stopGreenMultiplier = 1.3;
+          } else if (tipoJogador === 'Conservador - 10% da banca') {
+            stopGreenMultiplier = 1.1;
+          }
+          
+          setStopGreen(formatarMoeda(valor * stopGreenMultiplier));
+          setStopLoss(formatarMoeda(valor * 0.8));
+        }
+      } catch (erro) {
+        alert('Erro ao importar o arquivo. Certifique-se de que é um arquivo JSON válido.');
+        console.error('Erro ao importar:', erro);
+      }
+    };
+    leitor.readAsText(arquivo);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-darker-bg to-dark-bg pt-32 px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-start relative">
       {/* Modal de Registro */}
       {showRegistrationModal && (
         <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center p-4 modal-overlay">
-          <div className="bg-darker-bg rounded-lg shadow-xl max-w-4xl w-full modal-content">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold text-white text-center mb-6 warning-text">
-                Registre-se em uma casa segura
-              </h2>
-              <div className="rounded-lg overflow-hidden mb-6 registration-iframe">
-                <iframe
-                  src="https://bit.ly/3WqarQL"
-                  className="w-full h-[600px]"
-                  frameBorder="0"
-                  loading="lazy"
-                ></iframe>
-              </div>
-              <div className="text-center">
-                <button
-                  onClick={() => setShowRegistrationModal(false)}
-                  className="modal-button text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105"
-                >
-                  Já sou registrado
-                </button>
-              </div>
+        <div className="bg-darker-bg rounded-lg shadow-xl max-w-4xl w-full modal-content">
+          <div className="p-6">
+            <h2 className="text-2xl font-bold text-white text-center mb-6 warning-text">
+              Registre-se em uma casa segura
+            </h2>
+            <div className="rounded-lg overflow-hidden mb-6 registration-iframe">
+              <iframe
+                src="https://bit.ly/3WqarQL"
+                className="w-full h-[600px]"
+                frameBorder="0"
+                loading="lazy"
+              ></iframe>
+            </div>
+            <div className="text-center">
+              <button
+                onClick={() => setShowRegistrationModal(false)}
+                className="modal-button text-white font-bold py-3 px-8 rounded-lg transition-all duration-300 transform hover:scale-105"
+              >
+                Já sou registrado
+              </button>
             </div>
           </div>
         </div>
+      </div>
       )}
 
       {/* Watermarks */}
@@ -252,17 +332,13 @@ const Dashboard: React.FC = () => {
 
             {/* Valor Máximo por Entrada */}
             <div className="mt-6">
-              <label className="block text-sm font-medium text-gray-400 mb-2">Valor Máximo por Entrada (5%)</label>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Valor Máximo por Entrada ({getValorMaximoEntradaPorcentagem(tipoJogador)}%)
+              </label>
               <div className="relative">
                 <input
                   type="text"
-                  value={
-                    resultado && !isNaN(resultado)
-                      ? formatarMoeda(calcularValorMaximoEntrada(resultado))
-                      : bankrollInicial && !isNaN(parseFloat(bankrollInicial))
-                        ? formatarMoeda(calcularValorMaximoEntrada(parseFloat(bankrollInicial)))
-                        : formatarMoeda(0)
-                  }
+                  value={formatarMoeda(calcularValorMaximoEntrada())}
                   readOnly
                   className="input-dark w-full p-3 rounded-lg text-white"
                 />
@@ -318,6 +394,39 @@ const Dashboard: React.FC = () => {
               </button>
             </div>
 
+            {/* Botões de Importação/Exportação */}
+            <div className="flex gap-4 mt-4">
+              {historicoBancas.length > 0 && (
+                <button
+                  onClick={exportarHistorico}
+                  className="purple-button-outline py-2 px-4 text-sm text-white font-semibold rounded-lg hover:transform hover:scale-105 flex items-center justify-center"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  Exportar Histórico
+                </button>
+              )}
+              <div className="file-input-wrapper">
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={importarHistorico}
+                  id="importar-historico"
+                  title="Selecione o arquivo de histórico"
+                />
+                <label
+                  htmlFor="importar-historico"
+                  className="purple-button-outline py-2 px-4 text-sm text-white font-semibold rounded-lg hover:transform hover:scale-105 flex items-center justify-center cursor-pointer"
+                >
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  Importar Histórico
+                </label>
+              </div>
+            </div>
+
             {/* Histórico de Bancas */}
             {historicoBancas.length > 0 && (
               <div className="glass-card p-4 rounded-lg mt-6">
@@ -365,12 +474,12 @@ const Dashboard: React.FC = () => {
 
         {/* Aviso de Idade e Responsabilidade */}
         <motion.div 
-          className="mt-12 flex flex-col items-center"
+          className="-mt-24 flex flex-col items-center space-y-1"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <div className="flex justify-center items-center space-x-4 mb-2 relative w-full">
+          <div className="flex justify-center items-center space-x-4 relative w-full">
             <p className="text-white font-semibold text-lg warning-text text-center">
               O jogo não é fonte de renda extra
               <span className="inline-flex items-center justify-center rounded-full bg-purple-600 w-8 h-8 warning-text ml-3 align-middle">
@@ -378,9 +487,7 @@ const Dashboard: React.FC = () => {
               </span>
             </p>
           </div>
-          <p className="text-purple-300 font-medium text-lg warning-text">
-            Jogue com responsabilidade
-          </p>
+          <p className="text-purple-300 font-medium text-lg -mt-1">Jogue com responsabilidade</p>
         </motion.div>
       </motion.div>
     </div>

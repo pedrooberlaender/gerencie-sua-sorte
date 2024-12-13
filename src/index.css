@@ -160,7 +160,7 @@ body {
   position: fixed;
   pointer-events: none;
   user-select: none;
-  color: rgba(138, 43, 226, 0.05);
+  color: rgba(138, 43, 226, 0.08);
   font-size: 24px;
   transform: rotate(-45deg);
   z-index: 1;
@@ -224,4 +224,33 @@ input[type="number"] {
 .modal-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(138, 43, 226, 0.4);
+}
+
+/* Estilos para input de arquivo */
+input[type="file"] {
+  color: transparent;
+}
+
+input[type="file"]::-webkit-file-upload-button {
+  visibility: hidden;
+}
+
+.file-input-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.file-input-wrapper input[type="file"] {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 100%;
+  min-height: 100%;
+  font-size: 100px;
+  text-align: right;
+  filter: alpha(opacity=0);
+  opacity: 0;
+  outline: none;
+  cursor: pointer;
+  display: block;
 }
