@@ -263,14 +263,14 @@ const Dashboard: React.FC = () => {
             <CloverIcon className="scale-50 sm:scale-75 md:scale-100" />
           </div>
           <div className="mx-32 sm:mx-36 md:mx-28">
-            <h1 className="title">
+            <h1 className="title text-center">
               <div className="sm:hidden flex flex-col gap-1">
-                <div>GERENCIE</div>
-                <div>SUA</div>
+                <div className="text-white">GERENCIE</div>
+                <div className="text-white">SUA</div>
                 <div className="text-purple-600">SORTE</div>
               </div>
               <div className="hidden sm:block">
-                GERENCIE SUA <span>SORTE</span>
+                GERENCIE SUA <span className="text-purple-600">SORTE</span>
               </div>
             </h1>
           </div>
@@ -345,7 +345,7 @@ const Dashboard: React.FC = () => {
             {/* Valor Máximo por Entrada */}
             <div className="mt-4">
               <label className="block text-sm sm:text-base font-medium text-gray-400 mb-2">
-                Valor Máximo por Entrada ({getValorMaximoEntradaPorcentagem(tipoJogador)}%)
+                Valor Máximo por Entrada ({getValorMaximoEntradaPorcentagem(tipoJogador)}%))
               </label>
               <div className="relative">
                 <input

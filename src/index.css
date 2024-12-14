@@ -71,9 +71,9 @@ body {
 }
 
 .glass-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(138, 43, 226, 0.2);
   margin-top: 0.3rem;
   width: 100%;
 }
@@ -83,15 +83,16 @@ body {
 }
 
 .input-dark {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(15, 23, 42, 0.8);
   border: 1px solid rgba(138, 43, 226, 0.2);
   transition: all 0.3s ease;
+  color: #FFFFFF;
 }
 
 .input-dark:focus {
   border-color: var(--purple-accent);
   box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2);
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(15, 23, 42, 0.9);
 }
 
 .purple-button {
@@ -152,24 +153,33 @@ body {
   padding: 8px;
   margin-bottom: 0.5rem;
   text-shadow: 
-    0 0 2px rgba(255, 255, 255, 0.8),
-    0 0 4px rgba(255, 255, 255, 0.4);
-  -webkit-text-stroke: 1px rgba(138, 43, 226, 0.4);
+    0 0 10px rgba(138, 43, 226, 0.6),
+    0 0 20px rgba(138, 43, 226, 0.4);
+  -webkit-text-stroke: 1px rgba(138, 43, 226, 0.6);
+}
+
+.title span {
+  color: var(--purple-accent);
+  text-shadow: 
+    0 0 10px rgba(138, 43, 226, 0.8),
+    0 0 20px rgba(138, 43, 226, 0.6);
+  -webkit-text-stroke: 1px var(--purple-accent);
+  filter: brightness(1.2);
 }
 
 @media (max-width: 640px) {
   .title {
-    font-size: 2.8rem;
+    font-size: 2.4rem;
+    text-shadow: 
+      0 0 10px rgba(138, 43, 226, 0.6),
+      0 0 20px rgba(138, 43, 226, 0.4);
   }
-}
-
-.title span {
-  color: #8A2BE2;
-  text-shadow: 
-    0 0 4px rgba(138, 43, 226, 0.8),
-    0 0 8px rgba(138, 43, 226, 0.4);
-  -webkit-text-stroke: 1px #8A2BE2;
-  filter: brightness(1.2);
+  
+  .title span {
+    text-shadow: 
+      0 0 10px rgba(138, 43, 226, 0.8),
+      0 0 20px rgba(138, 43, 226, 0.6);
+  }
 }
 
 .form-group {
